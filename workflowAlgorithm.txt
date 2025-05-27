@@ -1,0 +1,22 @@
+WorkFlow algorithm
+
+1. Triggering the workflow -> the workflow begins whenever a user create a new subscription . We pass the created subscription ID to our Workflow
+@. Retreiving subscription Details
+    . The proccess extracts the subscription ID from the context
+    . it then searches for the corresponding subscription in the database
+3. Validation cheks
+    . If the subscription does not exist, an error is logged , and the preocess terminates
+    . if the subscription exists, it status is cheked:
+        . if inactive, the status is logged, and the process exits.
+        . if active , the renewal date is verifed.
+4. Renewal date evaluation
+    . if the renewal date has passed, it logs this information and exits
+    . if the renewal date is in the future, the reminder loop begins
+5. Reminder Scheduling
+    .For each predefined reminder:
+        . the reminder date is calculated
+        . if the reminder date is in the future, the system waits unitl that time.
+        . Once the reminder date arrives (or if it hase already pased,) the reminder email is sent
+6. completion
+    The process repeates for all reminders in the list
+    after processing all reminders , the workflow concludes .
