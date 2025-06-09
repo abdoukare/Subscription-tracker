@@ -8,6 +8,76 @@ const {serve} = require('@upstash/workflow/express');
 
 const REMINDERS = [7,5,2,1];
 
+export const SendReminder = async (req, res) => {
+    try {
+        console.log('Received reminder request:', {
+            body: req.body,
+            headers: req.headers
+        });
+
+        const { subscriptionId } = req.body;
+        if (!subscriptionId) {
+            return res.status(400).json({
+                success: false,
+                error: 'No subscriptionId provided'
+            });
+        }
+
+        // Fetch subscription with user details
+        const subscription = await Subscription.findById(subscriptionId)
+            .populate('user', 'name email');
+
+        if (!subscription) {
+            return res.status(404).json({
+                success: false,
+                error: `Subscription not found: ${subscriptionId}`
+            });
+        }
+
+        console.log('Processing subscription:', {
+            id: subscription._id,
+            status: subscription.status,
+            renewalDate: subscription.renewalDate
+        });
+
+        const renewalDate = dayjs(subscription.renewalDate);
+        const today = dayjs();
+        const daysUntilRenewal = renewalDate.diff(today, 'day');
+
+        // Only send reminder if it matches our reminder days
+        if (REMINDERS.includes(daysUntilRenewal)) {
+            await sendReminderEmail({
+                to: subscription.user.email,
+                type: `${daysUntilRenewal}_days_reminder`,
+                subscription: {
+                    name: subscription.name,
+                    renewalDate: subscription.renewalDate,
+                    price: subscription.price,
+                    daysUntilRenewal
+                }
+            });
+
+            console.log(`Sent reminder email for subscription ${subscriptionId} - ${daysUntilRenewal} days until renewal`);
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                subscription: subscription._id,
+                daysUntilRenewal,
+                emailSent: REMINDERS.includes(daysUntilRenewal)
+            }
+        });
+
+    } catch (error) {
+        console.error('Reminder processing failed:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+/*
 export const SendReminder = serve(async (context) => {
     try {
         console.log('Workflow started with context:', {
@@ -83,3 +153,4 @@ const triggerReminder = async (context, label, subscription) => {
     });
 }
 
+*/

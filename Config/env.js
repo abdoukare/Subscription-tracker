@@ -8,5 +8,6 @@ export const {
   JWT_SECRET, JWT_EXPIRE,
   ARCJET_ENV, ARCJET_KEY,
     QSTASH_TOKEN , QSTASH_URL,
-    SERVER_URL, EMAIL_PASSWORD,
+     EMAIL_PASSWORD,
 } = process.env;
+export const SERVER_URL = process.env.QSTASH_DESTINATION_URL || 'http://localhost:5500';
