@@ -1,16 +1,17 @@
 import Subscription from '../models/subscription.model.js';
 import { workflowClient } from '../Config/upstash.js';
 import dayjs from 'dayjs';
+import { sendReminderEmail } from '../utils/email.js';
 
 const REMINDER_DAYS = [1, 3, 5, 7];
 
 export const createSubscription = async (req, res, next) => {
     try {
         // Calculate status based on renewal date
-        const renewalDate = dayjs(req.body.renewalDate);
+        const renewalDate = dayjs(req.body.renewalDate).startOf('day');
         const today = dayjs();
         // Use floating point diff and round up to include partial days
-        const daysUntilRenewal = Math.ceil(renewalDate.diff(today, 'day', true));
+        const daysUntilRenewal = renewalDate.diff(today, 'day');
         const status = daysUntilRenewal < 0 ? 'expired' : 'active';
 
         const subscription = await Subscription.create({
@@ -27,7 +28,14 @@ export const createSubscription = async (req, res, next) => {
             user: subscription.user,
             daysUntilRenewal
         });
-
+		await sendReminderEmail({
+			to:req.user.email,
+			type: 'New subscription',
+			subscription:{
+				...subscription.toObject(),
+				user: {name: req.user.name}
+			}
+		});
         // Schedule immediate check and daily checks with QStash
         const response = await workflowClient.publishJSON({
             url: `${process.env.QSTASH_DESTINATION_URL}/api/v1/workflows/subscription/reminder`,

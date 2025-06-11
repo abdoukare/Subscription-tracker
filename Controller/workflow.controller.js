@@ -40,20 +40,21 @@ export const SendReminder = async (req, res) => {
             renewalDate: subscription.renewalDate
         });
 
-        const renewalDate = dayjs(subscription.renewalDate);
-        const today = dayjs();
+        const renewalDate = dayjs(subscription.renewalDate).startOf('day');
+        const today = dayjs().startOf('day');
         const daysUntilRenewal = renewalDate.diff(today, 'day');
 
         // Only send reminder if it matches our reminder days
         if (REMINDERS.includes(daysUntilRenewal)) {
             await sendReminderEmail({
                 to: subscription.user.email,
-                type: `${daysUntilRenewal}_days_reminder`,
+                type: `${daysUntilRenewal}_days_reminder`, // e.g., "3_days_reminder"
                 subscription: {
                     name: subscription.name,
                     renewalDate: subscription.renewalDate,
                     price: subscription.price,
-                    daysUntilRenewal
+                    daysUntilRenewal,
+                    user: { name: subscription.user.name }
                 }
             });
 
