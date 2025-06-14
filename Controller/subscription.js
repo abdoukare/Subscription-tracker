@@ -67,18 +67,36 @@ export const createSubscription = async (req, res, next) => {
             daysUntilRenewal
         });
 
-        res.status(201).json({ 
-            success: true, 
-            data: { 
-                subscription, 
-                workflowId: response.messageId,
-                nextCheck: new Date(Date.now() + 24 * 60 * 60 * 1000), // Next day
-                daysUntilRenewal
-            } 
+        // 3. Respond to frontend (success)
+        res.status(201).json({ success: true, message: "Subscription created", data: subscription });
+
+        // 4. Call Qstash (do not await, or catch errors separately)
+        workflowClient.publishJSON({ 
+            url: `${process.env.QSTASH_DESTINATION_URL}/api/v1/workflows/subscription/reminder`,
+            body: {
+                subscriptionId: subscription._id,
+                name: subscription.name,
+                renewalDate: subscription.renewalDate,
+                status: subscription.status,
+                reminderDays: REMINDER_DAYS
+            },
+            options: {
+                retries: 3,
+                delay: '0s', // Immediate first check
+                cron: '0 0 * * *', // Then daily at midnight
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Subscription-Name': subscription.name,
+                    'X-Subscription-Status': subscription.status
+                }
+            }
+        }).catch(err => {
+            console.error("Qstash error:", err);
         });
-    } catch (e) {
-        console.error('Subscription creation error:', e);
-        next(e);
+
+    } catch (err) {
+        // Only catch errors from subscription creation/email sending
+        res.status(500).json({ success: false, message: "Failed to create subscription" });
     }
 };
 
