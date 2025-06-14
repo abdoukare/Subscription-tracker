@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import {PORT} from './Config/env.js';
 import UserRouter from './Routes/User.routes.js';
 import AuthRouter from './Routes/auth.routes.js';
@@ -10,6 +11,16 @@ import arcjet from '@arcjet/node';
 import arcjetMiddleware from './middlewares/arcjet.js';
 import WorkflowRouter from "./Routes/workflow.js";
 const app = express(); 
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || origin.startsWith('http://localhost:')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({extended: false})); // to prosess form data snet via post request html
 app.use(cookieParser());

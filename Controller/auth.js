@@ -27,8 +27,9 @@ export const signUp = async (req, res, next) => {
 		res.status(201).json({
 			success: true,
 			message: 'User created successfully',
-			data: newUser,
-			token
+			data: {
+				User : newUser,
+				token: token}
 		});
 	}catch(error){
 		await session.abortTransaction(); // if anything fault happen abort transaction
