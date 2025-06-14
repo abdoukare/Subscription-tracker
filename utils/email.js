@@ -1,6 +1,6 @@
 import { emailTemplates } from './template-email.js'
 import dayjs from 'dayjs'
-import transporter, { accountEmail } from '../config/nodemailer.js'
+import transporter, { accountEmail } from '../Config/nodemailer.js'
 
 export const sendReminderEmail = async ({ to, type, subscription }) => {
     if(!to || !type) throw new Error('Missing required parameters');
