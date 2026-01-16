@@ -174,7 +174,7 @@ This endpoint is called by QStash to process and send reminder emails for subscr
 
 ## License
 
-MIT
+there is no licence 
 
 ---
 
