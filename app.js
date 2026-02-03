@@ -1,34 +1,43 @@
 import express from 'express';
-import {PORT} from './Config/env.js';
+import { config } from 'dotenv';
+import arcjetMiddleware from './middlewares/arcjet.js';
 import UserRouter from './Routes/User.routes.js';
 import AuthRouter from './Routes/auth.routes.js';
 import SubscriptionRouter from './Routes/subscription.routes.js';
-import connectDB from './database/db.js';
+import WorkflowRouter from './Routes/workflow.js';
 import errorMiddleware from './middlewares/error.js';
-import cookieParser from 'cookie-parser';
-import arcjet from '@arcjet/node';
-import arcjetMiddleware from './middlewares/arcjet.js';
-import WorkflowRouter from "./Routes/workflow.js";
-const app = express(); 
+import pool, { testConnection } from './database/db.js'; // Import pool and testConnection
+
+// Load environment variables
+config({ path: `.env.${process.env.NODE_ENV || 'development'}.local` });
+
+const app = express();
+
+// Middleware
 app.use(express.json());
-app.use(express.urlencoded({extended: false})); // to prosess form data snet via post request html
-app.use(cookieParser());
 app.use(arcjetMiddleware);
+
+// Routes
 app.get('/', (req, res) => {
-	res.send('Hey there !');
+  res.send('Hey there !');
 });
-try{
-	app.use('/api/v1/users', UserRouter);
-	app.use('/api/v1/auth', AuthRouter);
-	app.use('/api/v1/subscription', SubscriptionRouter);
-	app.use('/api/v1/workflow', WorkflowRouter);
-}catch(err){
-	res.send(err);
-}
+
+app.use('/api/v1/users', UserRouter);
+app.use('/api/v1/auth', AuthRouter);
+app.use('/api/v1/subscription', SubscriptionRouter);
+app.use('/api/v1/workflow', WorkflowRouter);
+
+// Error handling middleware (should be last)
 app.use(errorMiddleware);
-app.listen(5500,async()=>{
-	console.log(`Server is running on http://localhost:${PORT}`);
-	await connectDB();
+
+// Start server and test database connection
+const PORT = process.env.PORT || 5500;
+
+app.listen(PORT, async () => {
+  console.log(`Listening on 0.0.0.0:${PORT}`);
+  
+  // Test database connection
+  await testConnection();
 });
 
 export default app;
